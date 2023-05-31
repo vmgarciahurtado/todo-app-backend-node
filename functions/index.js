@@ -57,7 +57,7 @@ app.put('/task/:id',[
 
     querySnapshot.forEach(async (doc) => {
       const document = collection.doc(doc.id);
-      document.update({state});
+      await document.update({state});
       res.status(200).json('Elemento actualizado');
     });
   })
@@ -67,6 +67,35 @@ app.put('/task/:id',[
   });
 
 });
+
+app.delete('/task/:id' , async (req , res) =>{
+
+    const {id} = req.params;
+
+    const collection =  await getFirestore()
+    .collection("tasks");
+
+    collection.where('id', '==', id)
+  .get()
+  .then((querySnapshot) => {
+    if (querySnapshot.empty) {
+      console.log('No se encontró ningún elemento con el id:', id);
+      return;
+    }
+
+    querySnapshot.forEach(async (doc) => {
+      const document = collection.doc(doc.id);
+      await document.delete();
+      res.status(200).json('Elemento eliminado');
+    });
+  })
+  .catch((error) => {
+      console.error('Error al buscar el elemento:', error);
+      res.status(400).json('Error al buscar el elemento');
+  });
+
+});
+
 
 
 //* USERS **/
