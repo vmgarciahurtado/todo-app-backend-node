@@ -12,37 +12,42 @@ initializeApp();
 
 const app = express();
 
-//* TAKS - GET **/
-app.get('/task' , async (req , res) =>{
+//******************************** TASKS ******************************************** */
+
+app.get('/task/:id' ,[
+  check('id','El id es obligatoria').not().isEmpty(),
+  validateFields
+], async (req , res) =>{
+
+  const {id} = req.params;
+
     const writeResult = await getFirestore()
-      .collection("tasks").get();
+      .collection("tasks").where('userId', '==', id).get();
 
       const result = writeResult.docs.map(doc => doc.data());
       res.status(200).json(result);
 });
 
 
-//* TAKS - POST **/
 app.post('/task' ,[
     check('id','El id es obligatoria').not().isEmpty(),
     check('title','El titulo es obligatorio').not().isEmpty(),
     check('state','El state es obligatorio').not().isEmpty(),
     check('description','La descripcion es obligatoria').not().isEmpty(),
+    check('userId','El id del usuario es obligatorio').not().isEmpty(),
     validateFields
 ], async (req , res) =>{
-    const {id,title, description,state} = req.body;
+    const {id,title, description,state,userId} = req.body;
 
     const enDescription = "english text";
     
     const writeResult = await getFirestore()
     .collection("tasks")
-    .add({id,title,description,state,enDescription});
+    .add({id,title,description,state,enDescription,userId});
     
     res.status(201).json({result: `task with ID: ${writeResult.id} added.`});
 });
-//**************************************************************************** */
 
-//* TAKS - PUT **/
 app.put('/task/:id',[
     check('state','El state es obligatorio').not().isEmpty(),
     check('state','No es un state valido').isIn(['true','false']),
@@ -75,7 +80,6 @@ app.put('/task/:id',[
 
 });
 
-//* TAKS - DELETE **/
 app.delete('/task/:id' , async (req , res) =>{
     const {id} = req.params;
 
@@ -103,9 +107,8 @@ app.delete('/task/:id' , async (req , res) =>{
 
 });
 
-//**************************************************************************** */
+//********************************* USERS ******************************************* */
 
-//* USERS - POST **/
 app.post('/user' ,[
   check('id','El id es obligatoria').not().isEmpty(),
   check('name','El name es obligatorio').not().isEmpty(),
@@ -145,8 +148,7 @@ app.get('/user/:id' , async (req , res) =>{
       
 });
 
-//**************************************************************************** */
-//* LOGIN - POST **/
+//***************************** LOGIN *********************************************** */
 app.post('/login' ,[
   check('email','El email no es valido').isEmail(),
   check('password','El password no es valido, debe tener mas de 2 caracteres').isLength({min: 3}),
