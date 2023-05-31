@@ -3,7 +3,10 @@ const {initializeApp} = require("firebase-admin/app");
 const {getFirestore} = require("firebase-admin/firestore");
 const { check } = require('express-validator');
 const express = require('express');
-const { validateFields } = require("./middlewares/validate-fields");
+const bcryptjs = require('bcryptjs');
+const { validateFields, existEmail } = require("./middlewares/validate-fields");
+const { verifyExist } = require("./helpers/db-validator");
+
 
 initializeApp();
 
@@ -28,12 +31,16 @@ app.post('/task' ,[
     validateFields
 ], async (req , res) =>{
     const {id,title, description,state} = req.body;
+
+    const enDescription = "english text";
+    
     const writeResult = await getFirestore()
     .collection("tasks")
-    .add({id,title,description,state});
+    .add({id,title,description,state,enDescription});
     
     res.status(201).json({result: `task with ID: ${writeResult.id} added.`});
 });
+//**************************************************************************** */
 
 //* TAKS - PUT **/
 app.put('/task/:id',[
@@ -68,8 +75,8 @@ app.put('/task/:id',[
 
 });
 
+//* TAKS - DELETE **/
 app.delete('/task/:id' , async (req , res) =>{
-
     const {id} = req.params;
 
     const collection =  await getFirestore()
@@ -96,9 +103,80 @@ app.delete('/task/:id' , async (req , res) =>{
 
 });
 
+//**************************************************************************** */
+
+//* USERS - POST **/
+app.post('/user' ,[
+  check('id','El id es obligatoria').not().isEmpty(),
+  check('name','El name es obligatorio').not().isEmpty(),
+  check('email','El email no es valido').isEmail(),
+  check('email').custom(existEmail),
+  check('password','El password no es valido, debe tener mas de 2 caracteres').isLength({min: 3}),
+  validateFields
+], async (req , res) =>{
+  const {id,name,email,password} = req.body;
+  
+  const salt = bcryptjs.genSaltSync();
+  const pass = bcryptjs.hashSync(password,salt);
+  
+  const writeResult = await getFirestore()
+  .collection("users")
+  .add({id,name,email,pass});
+  
+  res.status(201).json({result: `user with ID: ${writeResult.id} added.`});
+});
+
+//* USERS - GET **/
+app.get('/user/:id' , async (req , res) =>{
+
+  const {id} = req.params;
+  const field = 'id';
+  const validator = id;
 
 
-//* USERS **/
+  const collection =  await getFirestore()
+  .collection("users");
+
+  const user = await verifyExist(collection,field,validator);
+  if (!user) {
+    res.status(400).json('No se encontró ningún usuario');
+  }
+  res.status(200).json(user);
+      
+});
+
+//**************************************************************************** */
+//* LOGIN - POST **/
+app.post('/login' ,[
+  check('email','El email no es valido').isEmail(),
+  check('password','El password no es valido, debe tener mas de 2 caracteres').isLength({min: 3}),
+  validateFields
+], async (req , res) =>{
+
+  const {email,password} = req.body;
+
+  const collection =  await getFirestore()
+  .collection("users");
+
+  const user = await verifyExist(collection,'email',email);
+  if (!user) {
+   return res.status(400).json({
+      msg: 'Usuario / Password no son correctos'
+  });
+  }
+
+  const validPassword = bcryptjs.compareSync(password,user.pass);
+  if (!validPassword) {
+       return res.status(400).json({
+          msg: 'Usuario / Password no son correctos'
+      });
+  }
+
+  const {pass,...rest} = user;
+  res.status(200).json(rest);
+      
+});
+//**************************************************************************** */
 
 exports.app = onRequest(app);
 
@@ -107,5 +185,12 @@ exports.app = onRequest(app);
 // .collection("tasks").listDocuments();
 
 // a.forEach(async (doc) => {
+//     await doc.delete();
+// });
+
+//*! Delete all users
+// const b = await getFirestore()
+// .collection("users").listDocuments();
+// b.forEach(async (doc) => {
 //     await doc.delete();
 // });
