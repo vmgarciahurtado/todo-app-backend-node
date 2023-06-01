@@ -1,7 +1,6 @@
 const {getFirestore} = require("firebase-admin/firestore");
 const {check} = require("express-validator");
 const {validateFields} = require("../middlewares/validate-fields");
-const bcryptjs = require("bcryptjs");
 const {verifyExist} = require("../helpers/db-validator");
 const {Router} = require("express");
 
@@ -23,16 +22,14 @@ router.post("/login", [
       msg: "Usuario / Password no son correctos",
     });
   }
-
-  const validPassword = bcryptjs.compareSync(password, user.pass);
-  if (!validPassword) {
+  const mail = await verifyExist(collection, "password", password);
+  if (!mail) {
     return res.status(400).json({
       msg: "Usuario / Password no son correctos",
     });
   }
 
-  const {pass, ...rest} = user;
-  res.status(200).json(rest);
+  res.status(200).json(mail);
 });
 
 module.exports = router;

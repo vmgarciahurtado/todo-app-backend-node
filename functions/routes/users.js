@@ -1,7 +1,6 @@
 const {getFirestore} = require("firebase-admin/firestore");
 const {Router} = require("express");
 const {check} = require("express-validator");
-const bcryptjs = require("bcryptjs");
 const {validateFields, existEmail} = require("../middlewares/validate-fields");
 const {verifyExist} = require("../helpers/db-validator");
 
@@ -17,12 +16,9 @@ router.post("/user", [
 ], async (req, res) =>{
   const {id, name, email, password} = req.body;
 
-  const salt = bcryptjs.genSaltSync();
-  const pass = bcryptjs.hashSync(password, salt);
-
   const writeResult = await getFirestore()
       .collection("users")
-      .add({id, name, email, pass});
+      .add({id, name, email, password});
 
   res.status(201).json({result: `user with ID: ${writeResult.id} added.`});
 });
