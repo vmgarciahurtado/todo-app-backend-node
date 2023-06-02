@@ -22,14 +22,13 @@ router.post("/login", [
       msg: "Usuario / Password no son correctos",
     });
   }
-  const mail = await verifyExist(collection, "password", password);
-  if (!mail) {
+  if (user.password != password) {
     return res.status(400).json({
       msg: "Usuario / Password no son correctos",
     });
   }
 
-  res.status(200).json(mail);
+  res.status(200).json(user);
 });
 
 module.exports = router;

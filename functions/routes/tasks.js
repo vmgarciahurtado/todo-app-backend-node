@@ -26,15 +26,16 @@ router.post("/task", [
   check("state", "El state es obligatorio").not().isEmpty(),
   check("description", "La descripcion es obligatoria").not().isEmpty(),
   check("userId", "El id del usuario es obligatorio").not().isEmpty(),
+  check("date", "La fecha es obligatoria").not().isEmpty(),
   validateFields,
 ], async (req, res) =>{
-  const {id, title, description, state, userId} = req.body;
+  const {id, title, description, state, userId, date} = req.body;
 
   const enDescription = "english text";
 
   const writeResult = await getFirestore()
       .collection("tasks")
-      .add({id, title, description, state, enDescription, userId});
+      .add({id, title, description, state, enDescription, userId, date});
 
   res.status(201).json({result: `task with ID: ${writeResult.id} added.`});
 });
