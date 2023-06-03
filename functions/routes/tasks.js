@@ -2,6 +2,7 @@ const {getFirestore} = require("firebase-admin/firestore");
 const {check} = require("express-validator");
 const {validateFields} = require("../middlewares/validate-fields");
 const {Router} = require("express");
+const axios = require("axios");
 
 const router = Router();
 
@@ -30,8 +31,15 @@ router.post("/task", [
   validateFields,
 ], async (req, res) =>{
   const {id, title, description, state, userId, date} = req.body;
+  let enDescription = "English description";
 
-  const enDescription = "english text";
+  try {
+    const data = await axios.get( `https://api.mymemory.translated.net/get?q=${description}!&langpair=es|en`);
+    const translation = data.data.responseData.translatedText;
+    enDescription = translation;
+  } catch (error) {
+    enDescription = "No translation, error when trying to translate";
+  }
 
   const writeResult = await getFirestore()
       .collection("tasks")
