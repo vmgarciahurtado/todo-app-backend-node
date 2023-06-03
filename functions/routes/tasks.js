@@ -40,23 +40,21 @@ router.post("/task", [
   res.status(201).json({result: `task with ID: ${writeResult.id} added.`});
 });
 
-router.put("/task/:id", [
+router.put("/task", [
   check("state", "El state es obligatorio").not().isEmpty(),
+  check("taskId", "El taskId es obligatorio").not().isEmpty(),
   check("state", "No es un state valido").isIn(["true", "false"]),
   validateFields,
 ], async (req, res) =>{
-  const {id} = req.params;
-  const {state} = req.body;
-
+  const {state, taskId} = req.body;
   const collection = await getFirestore()
       .collection("tasks");
 
-  collection.where("id", "==", id)
+  collection.where("id", "==", taskId)
       .get()
       .then((querySnapshot) => {
         if (querySnapshot.empty) {
-          console.log("No se encontró ningún elemento con el id:", id);
-          return;
+          return res.status(400).json("El elemento no existe");
         }
 
         querySnapshot.forEach(async (doc) => {
@@ -67,7 +65,7 @@ router.put("/task/:id", [
       })
       .catch((error) => {
         console.error("Error al buscar el elemento:", error);
-        res.status(400).json("Error al buscar el elemento");
+        return res.status(400).json("Error al buscar el elemento");
       });
 });
 
@@ -81,8 +79,7 @@ router.delete("/task/:id", async (req, res) =>{
       .get()
       .then((querySnapshot) => {
         if (querySnapshot.empty) {
-          console.log("No se encontró ningún elemento con el id:", id);
-          return;
+          return res.status(400).json("El elemento no existe");
         }
 
         querySnapshot.forEach(async (doc) => {
@@ -93,7 +90,7 @@ router.delete("/task/:id", async (req, res) =>{
       })
       .catch((error) => {
         console.error("Error al buscar el elemento:", error);
-        res.status(400).json("Error al buscar el elemento");
+        return res.status(400).json("Error al buscar el elemento");
       });
 });
 
